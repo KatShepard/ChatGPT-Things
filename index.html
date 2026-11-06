@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cube Simulation</title>
+<style>
+:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172033;background:#f7f8fb}
+*{box-sizing:border-box} body{margin:0;padding:24px} main{max-width:900px;margin:auto}
+.top{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:18px}
+h1{font-size:clamp(1.35rem,4vw,2rem);margin:0}.stats{font-weight:700}.controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+button{font:inherit;min-height:46px;border-radius:10px;padding:10px 18px;border:1px solid #c7ccd6;background:white;color:#172033;cursor:pointer}
+button.primary{background:#315cce;color:white;border-color:#315cce;font-weight:700}button.danger{font-weight:700}button:disabled{opacity:.42;cursor:not-allowed}
+#message{min-height:24px;margin:0 0 16px;color:#596273}#table{display:grid;grid-template-columns:repeat(5,minmax(48px,1fr));gap:16px;padding:22px;border:1px solid #d9dde5;border-radius:16px;background:white}
+.cube{border:0;background:transparent;padding:4px;min-height:62px;display:flex;justify-content:center;align-items:center}
+.face{width:52px;height:52px;border:2px solid #77808f;border-radius:8px;box-shadow:inset -7px -7px 0 rgba(0,0,0,.08),4px 5px 0 rgba(0,0,0,.10);position:relative;transition:transform .12s,outline .12s}
+.face:before{content:"";position:absolute;left:7px;right:7px;top:6px;height:8px;border-radius:5px;background:rgba(255,255,255,.28)}
+.red{background:#d82f2f}.blue{background:#2864d7}.blank{background:#f8fafc}.cube.selected .face{outline:4px solid #111827;outline-offset:4px;transform:translateY(-4px)}
+.cube:focus-visible{outline:3px solid #315cce;outline-offset:2px}.rolling .face{animation:wobble .3s ease}
+@keyframes wobble{0%{transform:rotate(0)}35%{transform:rotate(14deg) scale(.9)}70%{transform:rotate(-10deg) scale(1.05)}100%{transform:rotate(0)}}
+.note{font-size:.85rem;color:#6b7280;margin-top:14px}@media(min-width:600px){#table{grid-template-columns:repeat(8,minmax(52px,1fr))}}@media(min-width:820px){#table{grid-template-columns:repeat(10,minmax(52px,1fr))}}@media(prefers-reduced-motion:reduce){.rolling .face{animation:none}}
+</style></head><body><main>
+<div class="top"><h1>Cube Simulation</h1><div class="stats"><span id="remaining">25</span> cubes remaining</div></div>
+<div class="controls"><button id="roll" class="primary" type="button">Roll 25 Cubes</button><button id="remove" class="danger" type="button" disabled>Remove Selected (0)</button><button id="reset" type="button">Start Over</button></div>
+<p id="message" aria-live="polite">Press Roll to begin.</p><div id="table" aria-label="Cubes"></div><p class="note">Click or tap a cube after a roll to select or unselect it for removal.</p>
+</main><script>
+(()=>{const table=document.getElementById("table"),rollBtn=document.getElementById("roll"),removeBtn=document.getElementById("remove"),resetBtn=document.getElementById("reset"),remaining=document.getElementById("remaining"),message=document.getElementById("message");let cubes=[],rolled=false;
+function random6(){if(window.crypto&&crypto.getRandomValues){const a=new Uint32Array(1),limit=Math.floor(4294967296/6)*6;do{crypto.getRandomValues(a)}while(a[0]>=limit);return a[0]%6}return Math.floor(Math.random()*6)}
+function result(){const n=random6();return n===0?"red":n<=2?"blue":"blank"}
+function update(){const selected=cubes.filter(c=>c.selected).length;remaining.textContent=cubes.length;removeBtn.disabled=!rolled||selected===0;removeBtn.textContent="Remove Selected ("+selected+")";rollBtn.disabled=cubes.length===0;rollBtn.textContent=cubes.length===25&&!rolled?"Roll 25 Cubes":"Roll "+cubes.length+" Remaining"}
+function render(){table.innerHTML="";cubes.forEach((c,i)=>{const b=document.createElement("button");b.type="button";b.className="cube"+(c.selected?" selected":"");b.disabled=!rolled;b.setAttribute("aria-pressed",c.selected?"true":"false");b.setAttribute("aria-label","Cube "+(i+1)+(rolled?", "+c.face+" face showing":"")+(c.selected?", selected":""));const face=document.createElement("span");face.className="face "+(rolled?c.face:"blank");b.appendChild(face);b.addEventListener("click",()=>{if(!rolled)return;c.selected=!c.selected;render()});table.appendChild(b)});update()}
+function roll(){cubes.forEach(c=>{c.face=result();c.selected=false});rolled=true;render();table.querySelectorAll(".cube").forEach(x=>x.classList.add("rolling"));message.textContent="Select any cubes you want to remove.";setTimeout(()=>table.querySelectorAll(".rolling").forEach(x=>x.classList.remove("rolling")),330)}
+function remove(){const n=cubes.filter(c=>c.selected).length;if(!n)return;cubes=cubes.filter(c=>!c.selected);rolled=false;render();message.textContent=n+" cube"+(n===1?"":"s")+" removed. Roll the remaining cubes when ready."}
+function reset(){cubes=Array.from({length:25},()=>({face:"blank",selected:false}));rolled=false;render();message.textContent="Press Roll to begin."}
+rollBtn.addEventListener("click",roll);removeBtn.addEventListener("click",remove);resetBtn.addEventListener("click",reset);reset()})();
+</script></body></html>
